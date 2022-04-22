@@ -59,7 +59,11 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             logger.info("Ordered execution of a {} request from {}", cmd,
                     msgCtx.getSender());
 
-            switch (cmd) {
+            switch (cmd) { 
+                
+                // NOTE - a few questions I have are -> Wouldn't the use of grpc represent a good way to send binary data safely and securely throughout the servers?
+                // NOTE -                            -> Wouldn't there be a way to store the status of these objects in WAL Logs? Or even append to disk, trying to only
+                //                                      close the application with SIGINT? Since they need to be serializable.
 
                 case PUT_COIN:
                     Long key = (Long) objIn.readObject();

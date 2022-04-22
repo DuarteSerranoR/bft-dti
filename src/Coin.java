@@ -29,12 +29,8 @@ public class Coin implements Serializable {
         Value = value;
     }
 
-    /*
-     * public Coin SerializeValues() {
-     * Id = Long.parseLong(Id.toString());
-     * Owner = Integer.parseInt(Owner.toString());
-     * Value = Float.valueOf(Value.toString());
-     * return this;
-     * }
-     */
+    @Override
+    public String toString() {
+        return "Coin: { Id: " + Id + "; Owner: " + Owner + "; Value: " + Value + "; }";
+    }
 }
