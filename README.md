@@ -15,3 +15,7 @@ This project uses the BFT-SMaRT replication library - http://bft-smart.github.io
 4. Foreach client run ./launch_client
 
 Once again, for more information/understanding on how this work, read the bftsmart library at http://bft-smart.github.io/library/
+
+## Run in a docker environment
+
+# TODO 
