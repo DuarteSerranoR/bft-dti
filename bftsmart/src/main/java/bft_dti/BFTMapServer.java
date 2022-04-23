@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,11 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
             logger.info("Ordered execution of a {} request from {}", cmd,
                     msgCtx.getSender());
 
-            switch (cmd) {
+            switch (cmd) { 
+                
+                // NOTE - a few questions I have are -> Wouldn't the use of grpc represent a good way to send binary data safely and securely throughout the servers?
+                // NOTE -                            -> Wouldn't there be a way to store the status of these objects in WAL Logs? Or even append to disk, trying to only
+                //                                      close the application with SIGINT? Since they need to be serializable.
 
                 case PUT_COIN:
                     Long key = (Long) objIn.readObject();
@@ -88,31 +93,50 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
 
                 case COIN_USERMAP:
                     Set<Entry<Long, Coin>> eset = coinMap.entrySet(); // Set was not returning ordered, ruining the
-                                                                      // consensus of our application. So I converted it
-                                                                      // into a returnable Set of Pairs.
+                                                                        // consensus of our application. So I converted it
+                                                                        // into a returnable Set of Pairs.
 
                     if (eset != null) {
 
-                        // Comparator<Entry<Long, Coin>> c = Comparator.comparingLong(e -> e.getKey());
-                        // Supplier<Map<Long, Coin>> sup = () -> new TreeMap<Long, Coin>();
-
                         Map<Long, Coin> es = eset.stream()
                                 .filter(e -> e.getValue().Owner == msgCtx.getSender())
-                                // .map(e -> new SimpleEntry<Long, Coin>(e.getKey(),
-                                // e.getValue()))
                                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
-                        // es.forEach(e -> System.out.println("key: " + e.getKey() + "; Coin: { Id: " +
-                        // e.getValue().Id
-                        // + "; Owner: " + e.getValue().Owner + "; Value: " + e.getValue().Value + ";
-                        // }"));
-
                         objOut.writeObject(es);
-                        // objOut.writeObject(es);
                         reply = byteOut.toByteArray();
                     }
 
                     break;
+
+                    case SPEND_COINS:
+                        long[] coinIds = (long[]) objIn.readObject();
+                        Integer receiverId = (Integer) objIn.readObject();
+                        float valueSpent = (float) objIn.readObject();
+                        int senderId = (int) objIn.readObject();
+                        
+                        float coinsTotalValue = Stream.of(coinIds)
+                                                    .map(c -> coinMap.get(c).Value)
+                                                    .reduce(Float::sum)
+                                                    .get()
+                                                    .floatValue();
+                        if (coinsTotalValue >= valueSpent) {
+
+                        }
+                        float changeValue = ;
+
+                        long spentValId = (long) objIn.readObject();
+                        Coin  = new Coin(spentValId, receiverId, valueSpent);
+                        long changeId = (long) objIn.readObject();
+                        Coin change = new Coin(changeId, senderId, changeValue);
+    
+                        if (change != null) {
+                            coinMap.put(changeId, change);
+                            objOut.writeObject("Operation successfuly executed");
+                            objOut.writeObject(changeId);
+                            reply = byteOut.toByteArray();
+                        }
+    
+                        break;
             }
 
             objOut.flush();

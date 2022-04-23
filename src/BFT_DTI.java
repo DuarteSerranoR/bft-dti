@@ -1,7 +1,10 @@
 package bft_dti;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,18 +28,25 @@ public class BFT_DTI {
 
     // Coins
     public Map<Long, Coin> getCoins() {
-        return CoinsMap.clientEntryMap();
+        return CoinsMap.ClientEntryMap();
     }
 
     public long Mint(float value) {
-        long[] coinIds = CoinsMap.keySet()
+        /* NOTE -> Can't just send the entire request, since
+        *          we are generating a completely random CoinIds.
+        *          The different servers could generate different
+        *          ids, ruining consensus. So we get the current coin
+        *          ids, and generate a unique and completely random 
+        *          coin Id with them.
+        */ 
+        long[] coinIds = CoinsMap.KeySet()
                 .stream()
                 .filter(Objects::nonNull)
                 .mapToLong(Long::longValue)
                 .toArray();
         try {
             Coin c = new Coin(coinIds, Id, value);
-            CoinsMap.put(c.Id, c);
+            CoinsMap.Put(c.Id, c);
             return c.Id;
         } catch (Exception e) {
             System.out.println(e);
@@ -44,9 +54,24 @@ public class BFT_DTI {
         }
     }
 
-    public long Spend(long[] ids /* coins ids */, long id /* user id */) {
-        // return ;
-        return 0; // TODO
+    public long Spend(long[] usedCoinIds, int receiverId, float value) {
+
+        long[] coinIds = CoinsMap.KeySet()
+                                .stream()
+                                .filter(Objects::nonNull)
+                                .mapToLong(Long::longValue)
+                                .toArray();
+        
+        long changeId = Utils.GenerateUniqueId(coinIds);
+        ArrayList<Long> coinIdsAndChange = new ArrayList<Long>();
+        for (long id : coinIds) {
+            coinIdsAndChange.add(changeId);
+        }
+        coinIds = coinIdsAndChange.stream().mapToLong(id -> id.longValue()).toArray();
+
+        long valueId = Utils.GenerateUniqueId(coinIds);
+
+        return CoinsMap.Spend(usedCoinIds, receiverId, Id, value, valueId, changeId);
     }
 
     // NFTs

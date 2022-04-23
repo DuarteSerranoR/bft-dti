@@ -8,7 +8,11 @@ import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.swing.tree.FixedHeightLayoutCache;
 
 public class BFT_DTIClient {
 
@@ -46,12 +50,36 @@ public class BFT_DTIClient {
 
             } else if (cmd.equalsIgnoreCase("MINT")) { // Coins
 
-                long id = bftMap.Mint(Float.parseFloat(console.readLine("Enter Mint value: ")));
+                String valueStr = console.readLine("Enter Mint value: ");
+                float value = Float.parseFloat(valueStr);
+                long id = bftMap.Mint(value);
                 System.out.println("Minted coin with id " + id);
 
             } else if (cmd.equalsIgnoreCase("SPEND")) {
 
-                System.out.println("TODO");
+                /*
+                *   SPEND(coins, receiver, value): require an array with the ids of the coins that will be
+                *       used as input, the id of the user that will receive the transfer (receiver) and the value
+                *       to be transferred. If the indicated coins provide enough funds to execute the
+                *       transaction (sum(coins) >= value), the operation consumes the coins and generates
+                *       two coins, one for the receiver with the value it received and another for the issuer
+                *       with the remaining value (sum(coins)-value). The operation returns the id of the coin
+                *       created for the issuer with the remaining value or 0 in case no coin was created (due
+                *       to no remain or invalid operation).
+                */
+                
+                String coinIdsStr = console.readLine("Enter your CoinIds input (long values separated by ','): ");
+                coinIdsStr.replace(" ", "");
+                long[] coinIds = Stream.of(coinIdsStr.split(",")).mapToLong(c -> Long.parseLong(c)).toArray();
+
+                String receiverIdStr = console.readLine("Enter the ReceiverId: ");
+                int receiverId = Integer.parseInt(receiverIdStr);
+                
+                String valueStr = console.readLine("Enter the Value to Spend: ");
+                float value = Float.parseFloat(valueStr);
+
+                long leftoverCoinId = bftMap.Spend(coinIds, receiverId, value);
+                System.out.println("Transaction finished. Change created with the Coin Id: { " + leftoverCoinId + " }.");
 
             } else if (cmd.equalsIgnoreCase("MY_NFTS")) {
                 System.out.println("TODO");

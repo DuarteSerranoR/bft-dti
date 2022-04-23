@@ -21,7 +21,7 @@ public class BFTCoinMap {
         serviceProxy = sProxy;
     }
 
-    public Coin put(Long key, Coin value) {
+    public Coin Put(Long key, Coin value) {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
@@ -50,7 +50,7 @@ public class BFTCoinMap {
         }
     }
 
-    public Set<Long> keySet() {
+    public Set<Long> KeySet() {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
@@ -79,8 +79,8 @@ public class BFTCoinMap {
             return null;
         }
     }
-
-    public Map<Long, Coin> clientEntryMap() {
+    
+    public Map<Long, Coin> ClientEntryMap() {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
@@ -104,6 +104,42 @@ public class BFTCoinMap {
         try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
             return (Map<Long, Coin>) objIn.readObject();
+        } catch (ClassNotFoundException | IOException ex) {
+            logger.error("Failed to deserialized response of ENTRYSET request");
+            return null;
+        }
+    }
+
+    public Long Spend(long[] coinIds, int receiverId, int userId, float value, long spentId, long changeId) {
+        byte[] rep;
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+                ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
+
+            objOut.writeObject(BFTMapRequestType.SPEND_COINS);
+            objOut.writeObject(coinIds);
+            objOut.writeObject(Integer.valueOf(receiverId));
+            objOut.writeObject(value);
+            objOut.writeObject(Integer.valueOf(userId));
+            objOut.writeObject(spentId);
+            objOut.writeObject(changeId);
+
+            objOut.flush();
+            byteOut.flush();
+
+            // invokes BFT-SMaRt
+            rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
+        } catch (IOException ex) {
+            logger.error("Failed to deserialized response of ENTRYSET request");
+            return null;
+        }
+
+        if (rep.length == 0) {
+            return null;
+        }
+
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
+                ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
+            return (long) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
             logger.error("Failed to deserialized response of ENTRYSET request");
             return null;
