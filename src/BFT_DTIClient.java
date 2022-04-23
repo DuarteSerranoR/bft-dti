@@ -2,17 +2,8 @@ package bft_dti;
 
 import java.io.Console;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.swing.tree.FixedHeightLayoutCache;
 
 public class BFT_DTIClient {
 
@@ -43,7 +34,12 @@ public class BFT_DTIClient {
                 Map<Long, Coin> myCoins = bftMap.getCoins();
                 float total = 0;
                 if(myCoins.size() > 0)
-                    total = myCoins.values().stream().map(e -> e.Value).reduce(Float::sum).get().floatValue();
+                    total = myCoins.values()
+                                    .stream()
+                                    .map(e -> e.Value)
+                                    .reduce(Float::sum)
+                                    .get()
+                                    .floatValue();
 
                 System.out.println("Your Coins: " + myCoins.entrySet());
                 System.out.println("Total Value: " + total);
@@ -64,7 +60,7 @@ public class BFT_DTIClient {
                 *       transaction (sum(coins) >= value), the operation consumes the coins and generates
                 *       two coins, one for the receiver with the value it received and another for the issuer
                 *       with the remaining value (sum(coins)-value). The operation returns the id of the coin
-                *       created for the issuer with the remaining value or 0 in case no coin was created (due
+                *       created for the issuer with the remaining value or 0 NOTE changed to -1 NOTE in case no coin was created (due
                 *       to no remain or invalid operation).
                 */
                 
@@ -78,8 +74,11 @@ public class BFT_DTIClient {
                 String valueStr = console.readLine("Enter the Value to Spend: ");
                 float value = Float.parseFloat(valueStr);
 
-                long leftoverCoinId = bftMap.Spend(coinIds, receiverId, value);
-                System.out.println("Transaction finished. Change created with the Coin Id: { " + leftoverCoinId + " }.");
+                Long leftoverCoinId = bftMap.Spend(coinIds, receiverId, value);
+                if (leftoverCoinId != null && leftoverCoinId == -1)
+                    System.out.println("Transaction finished. No change was generated since the value was on point.");
+                else if (leftoverCoinId != null)
+                    System.out.println("Transaction finished. Change created with the Coin Id: { " + leftoverCoinId.longValue() + " }.");
 
             } else if (cmd.equalsIgnoreCase("MY_NFTS")) {
                 System.out.println("TODO");

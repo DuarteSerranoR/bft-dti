@@ -8,10 +8,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -113,32 +118,51 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                         Integer receiverId = (Integer) objIn.readObject();
                         float valueSpent = (float) objIn.readObject();
                         int senderId = (int) objIn.readObject();
-                        
-                        float coinsTotalValue = Stream.of(coinIds)
-                                                    .map(c -> coinMap.get(c).Value)
-                                                    .reduce(Float::sum)
-                                                    .get()
-                                                    .floatValue();
-                        if (coinsTotalValue >= valueSpent) {
 
-                            float changeValue = ;
-    
-                            long spentValId = (long) objIn.readObject();
-                            Coin  = new Coin(spentValId, receiverId, valueSpent);
-                            long changeId = (long) objIn.readObject();
-                            Coin change = new Coin(changeId, senderId, changeValue);
-    
-                            if (change != null) {
-                                coinMap.put(changeId, change);
+                        ArrayList<Long> coinIdsList = new ArrayList<Long>();
+                        for (long id : coinIds) {
+                            coinIdsList.add(id);
+                        }
+                        Optional<Float> _coinsTotalValue = coinMap.entrySet()
+                                                        .stream()
+                                                        .filter(e -> coinIdsList.contains(e.getKey()))
+                                                        .map(e -> e.getValue().Value)
+                                                        .reduce(Float::sum);
+                        
+                        if (_coinsTotalValue.isPresent()) {
+                            
+                            float coinsTotalValue = _coinsTotalValue.get().floatValue();
+
+                            if (coinsTotalValue >= valueSpent) {
+
+                                coinMap.keySet().removeAll(coinIdsList);
+
+                                float changeValue = coinsTotalValue - valueSpent;
+        
+                                long spentValId = (long) objIn.readObject();
+                                Coin receivedCoin = new Coin(spentValId, receiverId, valueSpent);
+                                coinMap.put(spentValId, receivedCoin);
+
+                                long changeId = (long) objIn.readObject();
+                                if (changeValue != 0) {
+                                    Coin change = new Coin(changeId, senderId, changeValue);
+                                    coinMap.put(changeId, change);
+                                } else {
+                                    changeId = -1;
+                                }
+        
                                 objOut.writeObject("Operation successfuly executed");
                                 objOut.writeObject(changeId);
-                                reply = byteOut.toByteArray();
                             }
+                            else {
+                                objOut.writeObject("Not enough");
+                                objOut.writeObject(coinsTotalValue);
+                            }
+                        } else {
+                            objOut.writeObject("Coins not found.");
+                            logger.error("Coins not found.");
                         }
-                        else {
-                            objOut.writeObject("Not enough");
-                            objOut.writeObject(coinsTotalValue);
-                        }
+                        reply = byteOut.toByteArray();
     
                         break;
             }

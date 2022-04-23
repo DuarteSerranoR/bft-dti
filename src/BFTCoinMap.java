@@ -45,7 +45,7 @@ public class BFTCoinMap {
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
             return (Coin) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialized response of PUT request");
+            logger.error("Failed to deserialize response of PUT request");
             return null;
         }
     }
@@ -63,7 +63,7 @@ public class BFTCoinMap {
             // invokes BFT-SMaRt
             rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
         } catch (IOException ex) {
-            logger.error("Failed to deserialized response of KEYSET request");
+            logger.error("Failed to deserialize response of KEYSET request");
             return null;
         }
 
@@ -75,7 +75,7 @@ public class BFTCoinMap {
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
             return (Set<Long>) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialized response of KEYSET request");
+            logger.error("Failed to deserialize response of KEYSET request");
             return null;
         }
     }
@@ -105,7 +105,7 @@ public class BFTCoinMap {
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
             return (Map<Long, Coin>) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialized response of ENTRYSET request");
+            logger.error("Failed to deserialize response of ENTRYSET request");
             return null;
         }
     }
@@ -129,11 +129,12 @@ public class BFTCoinMap {
             // invokes BFT-SMaRt
             rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
         } catch (IOException ex) {
-            logger.error("Failed to deserialized response of ENTRYSET request");
+            logger.error("Failed to deserialized response of SPEND_COINS request");
             return null;
         }
 
         if (rep.length == 0) {
+            System.out.println("Nothing returned");
             return null;
         }
 
@@ -141,20 +142,21 @@ public class BFTCoinMap {
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
             
             String status = (String) objIn.readObject();
-            if (status == "Operation successfuly executed")
+            if (status.equals((String) "Operation successfuly executed")) {
                 return (long) objIn.readObject();
-            else if (status == "Not enough") {
+            }
+            else if (status.equals((String) "Not enough")) {
                 float currencyUsed = (float) objIn.readObject();
-                logger.error("Not enough to perform operation.");
-                logger.error("Currency in chosen coins: " + currencyUsed + "; Value needed: " + value + "; What is missing: " + (value - currencyUsed) + ".");
+                System.out.println("Not enough to perform operation.");
+                System.out.println("Currency in chosen coins: " + currencyUsed + "; Value needed: " + value + "; What is missing: " + (value - currencyUsed) + ".");
                 return null;
             }
             else {
-                logger.error(status);
+                System.out.println(status);
                 return null;
             }
         } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialized response of ENTRYSET request");
+            logger.error("Failed to deserialize response of SPEND_COINS request");
             return null;
         }
     }

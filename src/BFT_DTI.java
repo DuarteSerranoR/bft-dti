@@ -54,24 +54,30 @@ public class BFT_DTI {
         }
     }
 
-    public long Spend(long[] usedCoinIds, int receiverId, float value) {
+    public Long Spend(long[] usedCoinIds, int receiverId, float value) {
 
-        long[] coinIds = CoinsMap.KeySet()
-                                .stream()
-                                .filter(Objects::nonNull)
-                                .mapToLong(Long::longValue)
-                                .toArray();
-        
-        long changeId = Utils.GenerateUniqueId(coinIds);
-        ArrayList<Long> coinIdsAndChange = new ArrayList<Long>();
-        for (long id : coinIds) {
+        try {
+            long[] coinIds = CoinsMap.KeySet()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .mapToLong(Long::longValue)
+                                    .toArray();
+            
+            long changeId = Utils.GenerateUniqueId(coinIds);
+            ArrayList<Long> coinIdsAndChange = new ArrayList<Long>();
+            for (long id : coinIds) {
+                coinIdsAndChange.add(id);
+            }
             coinIdsAndChange.add(changeId);
+            coinIds = coinIdsAndChange.stream().mapToLong(id -> id.longValue()).toArray();
+    
+            long valueId = Utils.GenerateUniqueId(coinIds);
+    
+            return CoinsMap.Spend(usedCoinIds, receiverId, Id, value, valueId, changeId);
+        } catch (Exception ex) {
+            System.out.println(ex.toString());
+            return null;
         }
-        coinIds = coinIdsAndChange.stream().mapToLong(id -> id.longValue()).toArray();
-
-        long valueId = Utils.GenerateUniqueId(coinIds);
-
-        return CoinsMap.Spend(usedCoinIds, receiverId, Id, value, valueId, changeId);
     }
 
     // NFTs
