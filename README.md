@@ -1,4 +1,4 @@
-# Byzantine Fault Tolerant -> Decentralized Token Infrastructure
+# Byzantine Fault Tolerant (State Machine Replication) -> Decentralized Token Infrastructure
 
 ## Project done for academic purposes.
 
