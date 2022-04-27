@@ -81,5 +81,7 @@ public class BFT_DTI {
     }
 
     // NFTs
-
+    public Map<Long, NFT> getNFTs() {
+        return NFTsMap.ClientEntryMap();
+    }
 }

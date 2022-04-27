@@ -38,7 +38,7 @@ public class BFT_DTI {
         *          ids, ruining consensus. So we get the current coin
         *          ids, and generate a unique and completely random 
         *          coin Id with them.
-        */ 
+        */
         long[] coinIds = CoinsMap.KeySet()
                 .stream()
                 .filter(Objects::nonNull)
@@ -81,5 +81,20 @@ public class BFT_DTI {
     }
 
     // NFTs
+    public Map<Long, NFT> getNFTs() {
+        return NFTsMap.ClientEntryMap();
+    }
+    
+    public Long MintNFT(String name, String uri) {
 
+        Map<Long, String> nftIds = NFTsMap.TotalEntryMap();
+
+        try {
+            NFT n = new NFT(nftIds, name, uri);
+            return NFTsMap.MintNFT(n);
+        } catch (Exception e) {
+            System.out.println(e);
+            return -1;
+        }
+    }
 }

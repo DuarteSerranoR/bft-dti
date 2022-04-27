@@ -16,8 +16,8 @@ public class BFT_DTIClient {
         System.out.println("\nCommands:\n");
         System.out.println("\tMY_COINS: Returns all Coin information that you own.");
         System.out.println("\tMINT: Creates a Coin and returns the Coin Id. Takes in the Coin's value."); // Coins
-        System.out.println("\tSPEND: ...");
-        System.out.println("\tMY_NFTS: ...");
+        System.out.println("\tSPEND: Spends the value of specific coins (through their coinIds), creating an payment-coin for a receiver and the change-coin for the spender (if needed).");
+        System.out.println("\tMY_NFTS: Returns all NFT information you own.");
         System.out.println("\tMINT_NFT: ...");
         System.out.println("\tREQUEST_NFT_TRANSFER: ...");
         System.out.println("\tCANCEL_REQUEST_NFT_TRANSFER: ...");
@@ -81,7 +81,11 @@ public class BFT_DTIClient {
                     System.out.println("Transaction finished. Change created with the Coin Id: { " + leftoverCoinId.longValue() + " }.");
 
             } else if (cmd.equalsIgnoreCase("MY_NFTS")) {
-                System.out.println("TODO");
+
+                Map<Long, NFT> myNFTs = bftMap.getNFTs();
+
+                System.out.println("Your NFTs: " + myNFTs.entrySet());
+
             } else if (cmd.equalsIgnoreCase("MINT_NFT")) {
                 System.out.println("TODO");
             } else if (cmd.equalsIgnoreCase("REQUEST_NFT_TRANSFER")) {

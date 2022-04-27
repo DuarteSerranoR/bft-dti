@@ -97,13 +97,13 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     break;
 
                 case COIN_USERMAP:
-                    Set<Entry<Long, Coin>> eset = coinMap.entrySet(); // Set was not returning ordered, ruining the
+                    Set<Entry<Long, Coin>> esetCoin = coinMap.entrySet(); // Set was not returning ordered, ruining the
                                                                         // consensus of our application. So I converted it
                                                                         // into a returnable Set of Pairs.
 
-                    if (eset != null) {
+                    if (esetCoin != null) {
 
-                        Map<Long, Coin> es = eset.stream()
+                        Map<Long, Coin> es = esetCoin.stream()
                                 .filter(e -> e.getValue().Owner == msgCtx.getSender())
                                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
@@ -113,58 +113,75 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
 
                     break;
 
-                    case SPEND_COINS:
-                        long[] coinIds = (long[]) objIn.readObject();
-                        Integer receiverId = (Integer) objIn.readObject();
-                        float valueSpent = (float) objIn.readObject();
-                        int senderId = (int) objIn.readObject();
+                case NFT_USERMAP:
+                    Set<Entry<Long, NFT>> esetNft = nftMap.entrySet(); // Set was not returning ordered, ruining the
+                                                                        // consensus of our application. So I converted it
+                                                                        // into a returnable Set of Pairs.
 
-                        ArrayList<Long> coinIdsList = new ArrayList<Long>();
-                        for (long id : coinIds) {
-                            coinIdsList.add(id);
-                        }
-                        Optional<Float> _coinsTotalValue = coinMap.entrySet()
-                                                        .stream()
-                                                        .filter(e -> coinIdsList.contains(e.getKey()))
-                                                        .map(e -> e.getValue().Value)
-                                                        .reduce(Float::sum);
-                        
-                        if (_coinsTotalValue.isPresent()) {
-                            
-                            float coinsTotalValue = _coinsTotalValue.get().floatValue();
+                    if (esetNft != null) {
 
-                            if (coinsTotalValue >= valueSpent) {
+                        Map<Long, NFT> es = esetNft.stream()
+                                .filter(e -> e.getValue().Owner == msgCtx.getSender())
+                                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
-                                coinMap.keySet().removeAll(coinIdsList);
-
-                                float changeValue = coinsTotalValue - valueSpent;
-        
-                                long spentValId = (long) objIn.readObject();
-                                Coin receivedCoin = new Coin(spentValId, receiverId, valueSpent);
-                                coinMap.put(spentValId, receivedCoin);
-
-                                long changeId = (long) objIn.readObject();
-                                if (changeValue != 0) {
-                                    Coin change = new Coin(changeId, senderId, changeValue);
-                                    coinMap.put(changeId, change);
-                                } else {
-                                    changeId = -1;
-                                }
-        
-                                objOut.writeObject("Operation successfuly executed");
-                                objOut.writeObject(changeId);
-                            }
-                            else {
-                                objOut.writeObject("Not enough");
-                                objOut.writeObject(coinsTotalValue);
-                            }
-                        } else {
-                            objOut.writeObject("Coins not found.");
-                            logger.error("Coins not found.");
-                        }
+                        objOut.writeObject(es);
                         reply = byteOut.toByteArray();
+                    }
+
+                    break;
+
+                case SPEND_COINS:
+                    long[] coinIds = (long[]) objIn.readObject();
+                    Integer receiverId = (Integer) objIn.readObject();
+                    float valueSpent = (float) objIn.readObject();
+                    int senderId = (int) objIn.readObject();
+
+                    ArrayList<Long> coinIdsList = new ArrayList<Long>();
+                    for (long id : coinIds) {
+                        coinIdsList.add(id);
+                    }
+                    Optional<Float> _coinsTotalValue = coinMap.entrySet()
+                                                    .stream()
+                                                    .filter(e -> coinIdsList.contains(e.getKey()))
+                                                    .map(e -> e.getValue().Value)
+                                                    .reduce(Float::sum);
+                    
+                    if (_coinsTotalValue.isPresent()) {
+                        
+                        float coinsTotalValue = _coinsTotalValue.get().floatValue();
+
+                        if (coinsTotalValue >= valueSpent) {
+
+                            coinMap.keySet().removeAll(coinIdsList);
+
+                            float changeValue = coinsTotalValue - valueSpent;
     
-                        break;
+                            long spentValId = (long) objIn.readObject();
+                            Coin receivedCoin = new Coin(spentValId, receiverId, valueSpent);
+                            coinMap.put(spentValId, receivedCoin);
+
+                            long changeId = (long) objIn.readObject();
+                            if (changeValue != 0) {
+                                Coin change = new Coin(changeId, senderId, changeValue);
+                                coinMap.put(changeId, change);
+                            } else {
+                                changeId = -1;
+                            }
+    
+                            objOut.writeObject("Operation successfuly executed");
+                            objOut.writeObject(changeId);
+                        }
+                        else {
+                            objOut.writeObject("Not enough");
+                            objOut.writeObject(coinsTotalValue);
+                        }
+                    } else {
+                        objOut.writeObject("Coins not found.");
+                        logger.error("Coins not found.");
+                    }
+                    reply = byteOut.toByteArray();
+
+                    break;
             }
 
             objOut.flush();
@@ -205,68 +222,6 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                 /*
                  * // NOTE: Entrysets and Keysets should only be ordered, since there needs to
                  * be consensus between the servers.
-                 * 
-                 * case COIN_KEYSET:
-                 * Set<Long> kSet = coinMap.keySet().stream().parallel()
-                 * .map(k -> Long.parseLong(k.toString()))
-                 * .collect(Collectors.toSet());
-                 * 
-                 * if (kSet != null) {
-                 * objOut.writeObject(kSet);
-                 * reply = byteOut.toByteArray();
-                 * }
-                 * break;
-                 * 
-                 * case COIN_ENTRYSET:
-                 * Set<Entry<Long, Coin>> eset = coinMap.entrySet();
-                 * 
-                 * if (eset != null) {
-                 * Set<Entry<Long, Coin>> es = eset.stream().parallel()
-                 * .filter(e -> e.getValue().Owner == msgCtx.getSender())
-                 * .map(e -> new AbstractMap.SimpleEntry<Long,
-                 * Coin>(Long.parseLong(e.getKey().toString()),
-                 * e.getValue()))
-                 * .collect(Collectors.toSet());
-                 * es.forEach(e -> System.out.println("key: " + e.getKey() + "; Coin: { Id: " +
-                 * e.getValue().Id
-                 * + "; Owner: " + e.getValue().Owner + "; Value: " + e.getValue().Value +
-                 * "; }"));
-                 * objOut.writeObject(es);
-                 * reply = byteOut.toByteArray();
-                 * }
-                 * 
-                 * break;
-                 */
-
-                /*
-                 * case GET_COIN:
-                 * K key = (K) objIn.readObject();
-                 * 
-                 * V ret = replicaMap.get(key);
-                 * 
-                 * if (ret != null) {
-                 * objOut.writeObject(ret);
-                 * reply = byteOut.toByteArray();
-                 * }
-                 * break;
-                 * case SIZE:
-                 * int n = replicaMap.size();
-                 * 
-                 * if (n != 0) {
-                 * objOut.writeObject(n);
-                 * reply = byteOut.toByteArray();
-                 * }
-                 * break;
-                 * case REMOVE:
-                 * K keyR = (K) objIn.readObject();
-                 * 
-                 * V rem = replicaMap.remove(keyR);
-                 * 
-                 * if (rem != null) {
-                 * objOut.writeObject(rem);
-                 * reply = byteOut.toByteArray();
-                 * }
-                 * break;
                  */
             }
 
