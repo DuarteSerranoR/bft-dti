@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,11 +36,14 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
     private TreeMap<Long, Coin> coinMap;
     @Serial
     private TreeMap<Long, NFT> nftMap;
+    @Serial
+    private TreeSet<NFTRequest> nftRequestsSet;
 
     // The constructor passes the id of the server to the super class
     public BFTMapServer(int id) {
         coinMap = new TreeMap<Long, Coin>();
         nftMap = new TreeMap<Long, NFT>();
+        nftRequestsSet = new TreeSet<NFTRequest>();
         replica = new ServiceReplica(id, this, this);
     }
 
@@ -67,9 +71,9 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
 
             switch (cmd) { 
                 
-                // NOTE - a few questions I have are -> Wouldn't the use of grpc represent a good way to send binary data safely and securely throughout the servers?
+                // NOTE - a few questions I have are -> Wouldn't the use of grpc represent a good way to send binary data safely and securely throughout the servers? Or would it hurt the protocol's performance too much?
                 // NOTE -                            -> Wouldn't there be a way to store the status of these objects in WAL Logs? Or even append to disk, trying to only
-                //                                      close the application with SIGINT? Since they need to be serializable.
+                //                                      close the application with SIGINT like some kind of Redis DB? Since they need to be serializable.
 
                 case PUT_COIN:
                     Long key = (Long) objIn.readObject();
@@ -96,9 +100,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     break;
 
                 case COIN_USERMAP:
-                    Set<Entry<Long, Coin>> esetCoin = coinMap.entrySet(); // Set was not returning ordered, ruining the
-                                                                        // consensus of our application. So I converted it
-                                                                        // into a returnable Set of Pairs.
+                    Set<Entry<Long, Coin>> esetCoin = coinMap.entrySet();
 
                     if (esetCoin != null) {
 
@@ -115,7 +117,8 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                 case NFT_USERMAP:
                     Set<Entry<Long, NFT>> esetNft = nftMap.entrySet(); // Set was not returning ordered, ruining the
                                                                         // consensus of our application. So I converted it
-                                                                        // into a returnable Set of Pairs.
+                                                                        // into a returnable Map.
+                                                                        // Later learned of treeset, not enough time to fix it.
 
                     if (esetNft != null) {
 
@@ -211,6 +214,53 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     }
 
                     break;
+
+                case PUT_NFT_REQUEST:
+                    NFTRequest nRequest = (NFTRequest) objIn.readObject();
+
+                    if (nftRequestsSet.stream().anyMatch(n -> n.From == nRequest.From && n.NFT == nRequest.NFT)) {
+                        objOut.writeObject(false);
+                        reply = byteOut.toByteArray();
+                        break;
+                    }
+                        
+                    boolean r = nftRequestsSet.add(nRequest);
+                    
+                    objOut.writeObject(r);
+                    reply = byteOut.toByteArray();
+
+                    break;
+
+                case REMOVE_NFT_REQUEST:
+                    Long nftId = (Long) objIn.readObject();
+                    Integer clientId = (Integer) objIn.readObject();
+
+                    NFTRequest reqs = nftRequestsSet.stream().filter(e -> e.NFT == nftId && e.From == clientId).findAny().orElse(null);
+
+                    if (reqs != null) {
+                        nftRequestsSet.remove(reqs);
+                        objOut.writeObject(true);
+                        reply = byteOut.toByteArray();
+                    } else {
+                        objOut.writeObject(false);
+                        reply = byteOut.toByteArray();
+                    }
+
+                    break;
+
+                case NFT_REQUESTS:
+                    Long tNftId = (Long) objIn.readObject();
+
+                    TreeSet<NFTRequest> optnftReq = nftRequestsSet.stream()
+                                                    .filter(e -> e.NFT == tNftId)
+                                                    .collect(Collectors.toCollection(TreeSet::new));
+
+                    if (optnftReq != null) {
+                        objOut.writeObject(optnftReq);
+                        reply = byteOut.toByteArray();
+                    }
+
+                    break;
             }
 
             objOut.flush();
@@ -263,11 +313,23 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                         reply = byteOut.toByteArray();
                     }
 
+                break;
+
+                case PUT_NFT_REQUEST:
+                    NFTRequest nRequest = (NFTRequest) objIn.readObject();
+
+                    if (nftRequestsSet.stream().anyMatch(n -> n.From == nRequest.From && n.NFT == nRequest.NFT)) {
+                        objOut.writeObject(false);
+                        reply = byteOut.toByteArray();
+                        break;
+                    }
+                    
+                    boolean r = nftRequestsSet.add(nRequest);
+                    
+                    objOut.writeObject(r);
+                    reply = byteOut.toByteArray();
+
                     break;
-                /*
-                 * // NOTE: Entrysets and Keysets should only be ordered, since there needs to
-                 * be consensus between the servers.
-                 */
             }
 
             objOut.flush();
@@ -284,7 +346,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
     public byte[] getSnapshot() {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 ObjectOutput out = new ObjectOutputStream(bos)) {
-            TreeMap[] maps = { coinMap, nftMap };
+            Object[] maps = { coinMap, nftMap, nftRequestsSet };
             out.writeObject(maps);
             out.flush();
             bos.flush();
@@ -299,9 +361,10 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
     public void installSnapshot(byte[] state) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(state);
                 ObjectInput in = new ObjectInputStream(bis)) {
-            TreeMap[] maps = (TreeMap[]) in.readObject();
+            Object[] maps = (Object[]) in.readObject();
             coinMap = (TreeMap<Long, Coin>) maps[0];
             nftMap = (TreeMap<Long, NFT>) maps[1];
+            nftRequestsSet = (TreeSet<NFTRequest>) maps[2];
         } catch (ClassNotFoundException | IOException ex) {
             ex.printStackTrace(); // debug instruction
         }

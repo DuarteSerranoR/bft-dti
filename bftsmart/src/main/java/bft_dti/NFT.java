@@ -33,4 +33,9 @@ public class NFT implements Serializable {
         Name = name;
         URI = uri;
     }
+
+    @Override
+    public String toString() {
+        return "NFT: { Id: " + Id + "; Owner: " + Owner + "; Name: '" + Name + "'; URI: '" + URI + "' }";
+    }
 }

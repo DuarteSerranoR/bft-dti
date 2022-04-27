@@ -2,7 +2,9 @@ package bft_dti;
 
 import java.io.Console;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class BFT_DTIClient {
@@ -19,9 +21,9 @@ public class BFT_DTIClient {
         System.out.println("\tSPEND: Spends the value of specific coins (through their coinIds), creating an payment-coin for a receiver and the change-coin for the spender (if needed).");
         System.out.println("\tMY_NFTS: Returns all NFT information you own.");
         System.out.println("\tMINT_NFT: Creates a NFT with unique Id and URI. Returns the new NFT's generated Id.");
-        System.out.println("\tREQUEST_NFT_TRANSFER: ...");
-        System.out.println("\tCANCEL_REQUEST_NFT_TRANSFER: ...");
-        System.out.println("\tMY_NFT_REQUESTS: ...");
+        System.out.println("\tREQUEST_NFT_TRANSFER: Submit a request to buy a NFT from someone. Specify what coins to use and an 'acceptance' expiration date.");
+        System.out.println("\tCANCEL_REQUEST_NFT_TRANSFER: Cancel a submited request for a specific NFT.");
+        System.out.println("\tMY_NFT_REQUESTS: List the requests done for a specific NFT.");
         System.out.println("\tPROCESS_NFT_TRANSFER: ...");
 
         while (true) {
@@ -112,7 +114,23 @@ public class BFT_DTIClient {
                 purchase offer per NFT.
                 */
                 
-                System.out.println("TODO");
+                // Validity or expiration date??? Went with validity on the sense of Expiration date
+                long nftId = Long.parseLong(console.readLine("Enter the target NFT's Id: "));
+                String coinIdsStr = console.readLine("Enter your CoinIds input (long values separated by ','): ");
+                coinIdsStr.replace(" ", "");
+                long[] coinIds = Stream.of(coinIdsStr.split(",")).mapToLong(c -> Long.parseLong(c)).toArray();
+                String valueStr = console.readLine("Enter the Value to Spend: ");
+                float value = Float.parseFloat(valueStr);
+                String validityStr = console.readLine("Enter the Validity/Expiration date of your request (yyyy-MM-ddThh:mm:ss.kk->2018-12-30T19:34:50.63): ");
+                LocalDateTime validity = LocalDateTime.parse(validityStr);
+
+                boolean transfSuccess = bftMap.RequestNFTTransfer(nftId, coinIds, value, validity);
+
+                if (transfSuccess)
+                    System.out.println("NFT Transfer request successfuly submited.");
+                else
+                    System.out.println("NFT Transfer request submission failed.");
+
             } else if (cmd.equalsIgnoreCase("CANCEL_REQUEST_NFT_TRANSFER")) {
                 
                 /*
@@ -120,7 +138,8 @@ public class BFT_DTIClient {
                 for nft. If the user did not create such request, the operation does nothing.
                 */
                 
-                System.out.println("TODO");
+                long nftId = Long.parseLong(console.readLine("Enter the Request's NFT Id: "));
+                bftMap.CancelNFTTransferRequest(nftId);
             } else if (cmd.equalsIgnoreCase("MY_NFT_REQUESTS")) {
                 
                 /*
@@ -128,7 +147,16 @@ public class BFT_DTIClient {
                 NFT if the caller is the owner of the NFT.
                 */
                 
-                System.out.println("TODO");
+                long nftId = Long.parseLong(console.readLine("Enter the NFT Id to get it's Requests: "));
+                Set<Long> myNFTs = bftMap.getNFTs().keySet();
+                if (myNFTs.stream().anyMatch(n -> n.longValue() == nftId)) {
+                    Set<NFTRequest> requests = bftMap.MyNFTRequests(nftId);
+                    if (requests != null)
+                        System.out.println("NFT Transfer request for NFT '" + nftId + "': " + requests + ".");
+                } else {
+                    System.out.println("NFT not owned.");
+                }
+
             } else if (cmd.equalsIgnoreCase("PROCESS_NFT_TRANSFER")) {
                 
                 /*

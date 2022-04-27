@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,4 +110,27 @@ public class BFT_DTI {
             return Long.valueOf(-1);
         }
     }
+    
+    // NFT Transfers
+    public boolean RequestNFTTransfer(long nftId, long[] coinsIds, float value, LocalDateTime validity) {
+        NFTRequest request = new NFTRequest(nftId, coinsIds, value, validity, Id);
+        Boolean success = NFTsMap.RequestNFTTransfer(request);
+        if (success == null)
+            success = Boolean.valueOf(false);
+        return success;
+    }
+    
+    public void CancelNFTTransferRequest(long nftId) {
+        NFTsMap.CancelNFTTransferRequest(nftId);
+    }
+    
+    public Set<NFTRequest> MyNFTRequests(long nftId) {
+        return NFTsMap.RequestsSet(nftId, Id);
+    }
+
+    /*
+    public Long ProcessNFTTransfer(long nftId, long[] coinsIds) {
+        return NFTsMap.RequestNFTTransfer();
+    }
+    */
 }
