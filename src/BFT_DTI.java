@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -87,14 +88,24 @@ public class BFT_DTI {
     
     public Long MintNFT(String name, String uri) {
 
-        Map<Long, String> nftIds = NFTsMap.TotalEntryMap();
+        Map<Long, String> nftKeyMap = NFTsMap.KeyMap();
+
+        if (nftKeyMap.values().contains(uri))
+            return null;
+
+        long[] nftIds = nftKeyMap.keySet()
+                                .stream()
+                                .filter(Objects::nonNull)
+                                .mapToLong(Long::longValue)
+                                .toArray();
 
         try {
-            NFT n = new NFT(nftIds, name, uri);
-            return NFTsMap.MintNFT(n);
+            long id = Utils.GenerateUniqueId(nftIds);
+            NFT n = new NFT(id, Id, name, uri);
+            return NFTsMap.Put(id, n);
         } catch (Exception e) {
             System.out.println(e);
-            return -1;
+            return Long.valueOf(-1);
         }
     }
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -38,7 +39,7 @@ public class BFT_DTI {
         *          ids, ruining consensus. So we get the current coin
         *          ids, and generate a unique and completely random 
         *          coin Id with them.
-        */ 
+        */
         long[] coinIds = CoinsMap.KeySet()
                 .stream()
                 .filter(Objects::nonNull)
@@ -83,5 +84,28 @@ public class BFT_DTI {
     // NFTs
     public Map<Long, NFT> getNFTs() {
         return NFTsMap.ClientEntryMap();
+    }
+    
+    public Long MintNFT(String name, String uri) {
+
+        Map<Long, String> nftKeyMap = NFTsMap.KeyMap();
+
+        if (nftKeyMap.values().contains(uri))
+            return null;
+
+        long[] nftIds = nftKeyMap.keySet()
+                                .stream()
+                                .filter(Objects::nonNull)
+                                .mapToLong(Long::longValue)
+                                .toArray();
+
+        try {
+            long id = Utils.GenerateUniqueId(nftIds);
+            NFT n = new NFT(id, Id, name, uri);
+            return NFTsMap.Put(id, n);
+        } catch (Exception e) {
+            System.out.println(e);
+            return Long.valueOf(-1);
+        }
     }
 }

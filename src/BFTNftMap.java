@@ -23,7 +23,7 @@ public class BFTNftMap {
         serviceProxy = sProxy;
     }
     
-    public NFT Put(Long key, Coin value) {
+    public Long Put(Long key, NFT value) {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
@@ -45,44 +45,13 @@ public class BFTNftMap {
 
         try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
-            return (Coin) objIn.readObject();
+            return (Long) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
             logger.error("Failed to deserialize response of PUT request");
             return null;
         }
     }
-
-    /*
-    public Set<Long> KeySet() {
-        byte[] rep;
-        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-                ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
-
-            objOut.writeObject(BFTMapRequestType.COIN_KEYSET);
-
-            objOut.flush();
-            byteOut.flush();
-
-            // invokes BFT-SMaRt
-            rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
-        } catch (IOException ex) {
-            logger.error("Failed to deserialize response of KEYSET request");
-            return null;
-        }
-
-        if (rep.length == 0) {
-            return null;
-        }
-
-        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
-                ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
-            return (Set<Long>) objIn.readObject();
-        } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialize response of KEYSET request");
-            return null;
-        }
-    }
-    */
+    
     public Map<Long, NFT> ClientEntryMap() {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

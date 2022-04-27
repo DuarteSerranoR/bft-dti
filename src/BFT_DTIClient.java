@@ -97,11 +97,11 @@ public class BFT_DTIClient {
 
                 String nameStr = console.readLine("Enter new NFT Name: ");
                 String uriStr = console.readLine("Enter new NFT URI: ");
-                Long id = bftMap.Mint(nameStr, uriStr);
+                Long id = bftMap.MintNFT(nameStr, uriStr);
 
                 if (id != null && id != -1)
                     System.out.println("Minted NFT with id " + id);
-                else if (id != -1)
+                else if (id == null)
                     System.out.println("NFT with URI '" + uriStr + "' already existed.");
 
             } else if (cmd.equalsIgnoreCase("REQUEST_NFT_TRANSFER")) {

@@ -23,8 +23,7 @@ public class BFTNftMap {
         serviceProxy = sProxy;
     }
     
-    /*
-    public NFT Put(Long key, Coin value) {
+    public Long Put(Long key, NFT value) {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
@@ -46,43 +45,13 @@ public class BFTNftMap {
 
         try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
-            return (Coin) objIn.readObject();
+            return (Long) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
             logger.error("Failed to deserialize response of PUT request");
             return null;
         }
     }
-
-    public Set<Long> KeySet() {
-        byte[] rep;
-        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-                ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
-
-            objOut.writeObject(BFTMapRequestType.COIN_KEYSET);
-
-            objOut.flush();
-            byteOut.flush();
-
-            // invokes BFT-SMaRt
-            rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
-        } catch (IOException ex) {
-            logger.error("Failed to deserialize response of KEYSET request");
-            return null;
-        }
-
-        if (rep.length == 0) {
-            return null;
-        }
-
-        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
-                ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
-            return (Set<Long>) objIn.readObject();
-        } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialize response of KEYSET request");
-            return null;
-        }
-    }
-    */
+    
     public Map<Long, NFT> ClientEntryMap() {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
@@ -113,19 +82,12 @@ public class BFTNftMap {
         }
     }
 
-    /*
-    public Long Spend(long[] coinIds, int receiverId, int userId, float value, long spentId, long changeId) {
+    public Map<Long, String> KeyMap() { // String represents the unique Uri
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
 
-            objOut.writeObject(BFTMapRequestType.SPEND_COINS);
-            objOut.writeObject(coinIds);
-            objOut.writeObject(Integer.valueOf(receiverId));
-            objOut.writeObject(value);
-            objOut.writeObject(Integer.valueOf(userId));
-            objOut.writeObject(spentId);
-            objOut.writeObject(changeId);
+            objOut.writeObject(BFTMapRequestType.NFT_KEYMAP);
 
             objOut.flush();
             byteOut.flush();
@@ -133,36 +95,20 @@ public class BFTNftMap {
             // invokes BFT-SMaRt
             rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
         } catch (IOException ex) {
-            logger.error("Failed to deserialized response of SPEND_COINS request");
+            logger.error("Failed to deserialized response of ENTRYSET request");
             return null;
         }
 
         if (rep.length == 0) {
-            System.out.println("Nothing returned");
             return null;
         }
 
         try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
-            
-            String status = (String) objIn.readObject();
-            if (status.equals((String) "Operation successfuly executed")) {
-                return (long) objIn.readObject();
-            }
-            else if (status.equals((String) "Not enough")) {
-                float currencyUsed = (float) objIn.readObject();
-                System.out.println("Not enough to perform operation.");
-                System.out.println("Currency in chosen coins: " + currencyUsed + "; Value needed: " + value + "; What is missing: " + (value - currencyUsed) + ".");
-                return null;
-            }
-            else {
-                System.out.println(status);
-                return null;
-            }
+            return (Map<Long, String>) objIn.readObject();
         } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialize response of SPEND_COINS request");
+            logger.error("Failed to deserialize response of ENTRYSET request");
             return null;
         }
     }
-    */
 }

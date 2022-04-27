@@ -40,6 +40,7 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
     public BFTMapServer(int id) {
         coinMap = new TreeMap<Long, Coin>();
         nftMap = new TreeMap<Long, NFT>();
+        nftRequestsMap = new TreeMap<Long, NFTRequest>();
         replica = new ServiceReplica(id, this, this);
     }
 
@@ -75,13 +76,12 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     Long key = (Long) objIn.readObject();
                     Coin value = (Coin) objIn.readObject();
 
-                    Coin ret = coinMap.put(key, value);
+                    Coin ret = coinMap.putIfAbsent(key, value);
 
-                    if (ret != null) {
-                        objOut.writeObject(ret);
+                    if (ret == null) {
+                        objOut.writeObject(value);
                         reply = byteOut.toByteArray();
                     }
-
                     break;
 
                 case COIN_KEYSET:
@@ -123,6 +123,20 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                         Map<Long, NFT> es = esetNft.stream()
                                 .filter(e -> e.getValue().Owner == msgCtx.getSender())
                                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+
+                        objOut.writeObject(es);
+                        reply = byteOut.toByteArray();
+                    }
+
+                    break;
+
+                case NFT_KEYMAP:
+                    Set<Entry<Long, NFT>> Nfts = nftMap.entrySet();
+
+                    if (Nfts != null) {
+
+                        Map<Long, String> es = Nfts.stream()
+                                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().URI));
 
                         objOut.writeObject(es);
                         reply = byteOut.toByteArray();
@@ -182,6 +196,22 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     reply = byteOut.toByteArray();
 
                     break;
+
+                case PUT_NFT:
+                    Long nKey = (Long) objIn.readObject();
+                    NFT nValue = (NFT) objIn.readObject();
+
+                    if (nftMap.values().stream().anyMatch(n -> n.URI == nValue.URI))
+                        break;
+                        
+                    NFT k = nftMap.putIfAbsent(nKey, nValue);
+
+                    if (k == null) {
+                        objOut.writeObject(nKey);
+                        reply = byteOut.toByteArray();
+                    }
+
+                    break;
             }
 
             objOut.flush();
@@ -212,12 +242,28 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     Long key = (Long) objIn.readObject();
                     Coin value = (Coin) objIn.readObject();
 
-                    Coin ret = coinMap.put(key, value);
+                    Coin ret = coinMap.putIfAbsent(key, value);
 
-                    if (ret != null) {
-                        objOut.writeObject(ret);
+                    if (ret == null) {
+                        objOut.writeObject(value);
                         reply = byteOut.toByteArray();
                     }
+                    break;
+
+                case PUT_NFT:
+                    Long nKey = (Long) objIn.readObject();
+                    NFT nValue = (NFT) objIn.readObject();
+
+                    if (nftMap.values().stream().anyMatch(n -> n.URI == nValue.URI))
+                        break;
+                        
+                    NFT k = nftMap.putIfAbsent(nKey, nValue);
+
+                    if (k == null) {
+                        objOut.writeObject(nKey);
+                        reply = byteOut.toByteArray();
+                    }
+
                     break;
                 /*
                  * // NOTE: Entrysets and Keysets should only be ordered, since there needs to

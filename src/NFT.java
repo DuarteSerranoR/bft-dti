@@ -1,12 +1,21 @@
 package bft_dti;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 
 public class NFT implements Serializable {
+
+    @Serial
     long Id; // there cannot be two NFTs with the same id
+    
+    @Serial
     int Owner;
+    
+    @Serial
     String Name;
+    
+    @Serial
     String URI; // URI = URL
 
     /// NFT object with unique id
@@ -23,5 +32,10 @@ public class NFT implements Serializable {
         Owner = owner;
         Name = name;
         URI = uri;
+    }
+
+    @Override
+    public String toString() {
+        return "NFT: { Id: " + Id + "; Owner: " + Owner + "; Name: '" + Name + "'; URI: '" + URI + "' }";
     }
 }
