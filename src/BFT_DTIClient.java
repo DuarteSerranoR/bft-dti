@@ -167,9 +167,17 @@ public class BFT_DTIClient {
                 the value (creating two coins, just like in SPEND) and change the ownership of the NFT
                 to the buyer. Return the id of the new coin created for the issuer with the payment or
                 0 if the operation is not performed.
-*/
-                
-                System.out.println("TODO");
+                */
+
+                // TODO did not confirm expiration
+
+                long nftId = Long.parseLong(console.readLine("Enter the NFT's Id: "));
+                int buyer = Integer.parseInt(console.readLine("Enter the Buyer (NFTRequest.From) Id: "));
+                boolean accept = Boolean.parseBoolean(console.readLine("Do you accept the transcation? (true/false): "));
+
+                long outCoinId = bftMap.ProcessNFTTransfer(nftId, buyer, accept);
+                if (outCoinId != -1)
+                    System.out.println("Transaction finished. Coin: " + outCoinId);
             } else {
                 System.out.println("\tInvalid command :P\n");
             }

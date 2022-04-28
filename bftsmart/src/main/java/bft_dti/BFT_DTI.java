@@ -121,16 +121,19 @@ public class BFT_DTI {
     }
     
     public void CancelNFTTransferRequest(long nftId) {
-        NFTsMap.CancelNFTTransferRequest(nftId);
+        NFTsMap.CancelNFTTransferRequest(nftId, Id);
     }
     
     public Set<NFTRequest> MyNFTRequests(long nftId) {
         return NFTsMap.RequestsSet(nftId);
     }
 
-    /*
-    public Long ProcessNFTTransfer(long nftId, long[] coinsIds) {
-        return NFTsMap.RequestNFTTransfer();
+    public long ProcessNFTTransfer(long nftId, int buyer, boolean accept) {
+        if (accept) {
+            Long change = NFTsMap.ProcessNFTTransfer(nftId, buyer);
+            if (change != null) return change.longValue();
+            else return -1;
+        }
+        else return -1;
     }
-    */
 }

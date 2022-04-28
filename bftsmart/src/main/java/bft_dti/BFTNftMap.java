@@ -141,12 +141,13 @@ public class BFTNftMap {
         }
     }
     
-    public void CancelNFTTransferRequest(long nftId) {
+    public void CancelNFTTransferRequest(long nftId, int id) {
         byte[] rep;
         try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
                 ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
             objOut.writeObject(BFTMapRequestType.REMOVE_NFT_REQUEST);
             objOut.writeObject(nftId);
+            objOut.writeObject(id);
 
             objOut.flush();
             byteOut.flush();
@@ -171,7 +172,7 @@ public class BFTNftMap {
             // invokes BFT-SMaRt
             rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
         } catch (IOException ex) {
-            logger.error("Failed to deserialized response of NFT_REQUESTS_USERMAP request");
+            logger.error("Failed to deserialized response of NFT_REQUESTS request");
             return null;
         }
 
@@ -183,7 +184,39 @@ public class BFTNftMap {
                 ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
             return (Set<NFTRequest>)((TreeSet<NFTRequest>) objIn.readObject());
         } catch (ClassNotFoundException | IOException ex) {
-            logger.error("Failed to deserialize response of NFT_REQUESTS_USERMAP request");
+            logger.error("Failed to deserialize response of NFT_REQUESTS request");
+            return null;
+        }
+    }
+
+    public Long ProcessNFTTransfer(long nftId, int buyer) {
+        byte[] rep;
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+                ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
+
+            objOut.writeObject(BFTMapRequestType.TRANSFER_NFT);
+            objOut.writeObject(nftId);
+            objOut.writeObject(buyer);
+
+            objOut.flush();
+            byteOut.flush();
+
+            // invokes BFT-SMaRt
+            rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
+        } catch (IOException ex) {
+            logger.error("Failed to deserialized response of TRANSFER_NFT request");
+            return null;
+        }
+
+        if (rep.length == 0) {
+            return null;
+        }
+
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
+                ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
+            return (Long) objIn.readObject();
+        } catch (ClassNotFoundException | IOException ex) {
+            logger.error("Failed to deserialize response of TRANSFER_NFT request");
             return null;
         }
     }

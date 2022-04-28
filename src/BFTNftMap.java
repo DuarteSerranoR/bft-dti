@@ -188,4 +188,36 @@ public class BFTNftMap {
             return null;
         }
     }
+
+    public Long ProcessNFTTransfer(long nftId, int buyer) {
+        byte[] rep;
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+                ObjectOutputStream objOut = new ObjectOutputStream(byteOut)) {
+
+            objOut.writeObject(BFTMapRequestType.TRANSFER_NFT);
+            objOut.writeObject(nftId);
+            objOut.writeObject(buyer);
+
+            objOut.flush();
+            byteOut.flush();
+
+            // invokes BFT-SMaRt
+            rep = serviceProxy.invokeOrdered(byteOut.toByteArray());
+        } catch (IOException ex) {
+            logger.error("Failed to deserialized response of TRANSFER_NFT request");
+            return null;
+        }
+
+        if (rep.length == 0) {
+            return null;
+        }
+
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(rep);
+                ObjectInputStream objIn = new ObjectInputStream(byteIn)) {
+            return (Long) objIn.readObject();
+        } catch (ClassNotFoundException | IOException ex) {
+            logger.error("Failed to deserialize response of TRANSFER_NFT request");
+            return null;
+        }
+    }
 }
