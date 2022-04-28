@@ -261,6 +261,74 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
                     }
 
                     break;
+
+                case TRANSFER_NFT:
+                    Long targetNftId = (Long) objIn.readObject();
+                    Integer buyer = (Integer) objIn.readObject();
+
+                    NFTRequest targetRequest = nftRequestsSet.stream()
+                                                    .filter(e -> e.NFT == targetNftId.longValue() && e.From == buyer.intValue())
+                                                    .findAny()
+                                                    .orElse(null);
+                                                    
+                    if (targetRequest != null) {
+                        // Changed owner
+                        NFT targetNFT = nftMap.get(targetNftId);
+                        Integer owner = Integer.valueOf(targetNFT.Owner);
+                        targetNFT.Owner = buyer.intValue(); 
+                        nftMap.put(targetNFT.Id, targetNFT);
+
+                        // Transaction
+                        long[] targetCoinIds = targetRequest.Coins;
+                        float valu = targetRequest.Value;
+                        ArrayList<Long> targetCoinIdsList = new ArrayList<Long>();
+                        for (long id : targetCoinIdsList) {
+                            targetCoinIdsList.add(id);
+                        }
+                        Optional<Float> _targetCoinsTotalValue = coinMap.entrySet()
+                                                        .stream()
+                                                        .filter(e -> targetCoinIdsList.contains(e.getKey()))
+                                                        .map(e -> e.getValue().Value)
+                                                        .reduce(Float::sum);
+                        if (_targetCoinsTotalValue.isPresent()) {
+                                                
+                            float targetCoinsTotalValue = _targetCoinsTotalValue.get().floatValue();
+
+                            if (targetCoinsTotalValue >= valu) {
+
+                                coinMap.keySet().removeAll(targetCoinIdsList);
+
+                                float changeValue = targetCoinsTotalValue - valu;
+        
+                                long spentValId = (long) objIn.readObject();
+                                Coin receivedCoin = new Coin(spentValId, owner.intValue(), valu);
+                                coinMap.put(spentValId, receivedCoin);
+
+                                long changeId = (long) objIn.readObject();
+                                if (changeValue != 0) {
+                                    Coin change = new Coin(changeId, buyer.intValue(), changeValue);
+                                    coinMap.put(changeId, change);
+                                }
+        
+                                objOut.writeObject("Operation successfuly executed");
+                                objOut.writeObject(receivedCoin.Id);
+                            }
+                            else {
+                                objOut.writeObject("Not enough");
+                                objOut.writeObject(-1);
+                            }
+                        } else {
+                            objOut.writeObject("Coins not found.");
+                            logger.error("Coins not found.");
+                            objOut.writeObject(-1);
+                        }
+                        reply = byteOut.toByteArray();
+
+                        // Remove Request
+                        nftRequestsSet.remove(targetRequest);
+                    }
+
+                    break;
             }
 
             objOut.flush();
