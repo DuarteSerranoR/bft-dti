@@ -1,18 +1,18 @@
 package bft_dti;
 
-import java.io.Serial;
+//import java.io.Serial;
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 
 public class Coin implements Serializable {
 
-    @Serial
+    //@Serial
     long Id; // there cannot be two coins with the same id
 
-    @Serial
+    //@Serial
     int Owner;
 
-    @Serial
+    //@Serial
     float Value;
 
     /// Coin object with unique id

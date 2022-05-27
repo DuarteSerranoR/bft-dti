@@ -7,7 +7,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.io.Serial;
+//import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,11 +32,11 @@ public class BFTMapServer<K, V> extends DefaultSingleRecoverable {
     private final Logger logger = LoggerFactory.getLogger("bftsmart");
     private final ServiceReplica replica;
 
-    @Serial
+    //@Serial
     private TreeMap<Long, Coin> coinMap;
-    @Serial
+    //@Serial
     private TreeMap<Long, NFT> nftMap;
-    @Serial
+    //@Serial
     private TreeSet<NFTRequest> nftRequestsSet;
 
     // The constructor passes the id of the server to the super class

@@ -1,24 +1,24 @@
 package bft_dti;
 
-import java.io.Serial;
+//import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public class NFTRequest implements Serializable, Comparable<NFTRequest> {
     
-    @Serial
+    //@Serial
     long NFT; // Serves as to owner
 
-    @Serial
+    //@Serial
     long[] Coins; // Serves as from owner
 
-    @Serial
+    //@Serial
     float Value;
 
-    @Serial
+    //@Serial
     LocalDateTime Validity;
 
-    @Serial
+    //@Serial
     int From; // still needed for uniqueness
 
     public NFTRequest(long nft, long[] coins, float value, LocalDateTime validity, int from) {

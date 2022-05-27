@@ -23,10 +23,11 @@ public class Utils {
         long end = start + timeout;
 
         while (true) {
-            long id = rand.nextLong(0, 1_000_000); // 1M values
+            //long id = rand.nextLong(0, 1_000_000); // 1M values
+            long id = rand.nextLong(); // 1M values
             // if (id < 0)
             // id = -id;
-            if (!LongStream.of(ids).anyMatch(x -> x == id)) {
+            if (!LongStream.of(ids).anyMatch(x -> x == id) && id > 0) {
                 return id;
             }
             if (System.currentTimeMillis() >= end) {

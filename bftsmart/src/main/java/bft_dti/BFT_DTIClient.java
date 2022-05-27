@@ -10,7 +10,8 @@ import java.util.stream.Stream;
 public class BFT_DTIClient {
 
     public static void main(String[] args) throws IOException {
-        int clientId = (args.length > 3) ? Integer.parseInt(args[0]) : 1001;
+        //int clientId = (args.length > 3) ? Integer.parseInt(args[0]) : 1001;
+        int clientId = Integer.parseInt(args[0]);
         BFT_DTI bftMap = new BFT_DTI(clientId);
 
         Console console = System.console();
